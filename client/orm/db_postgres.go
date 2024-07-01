@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/beego/beego/v2/client/orm/internal/logs"
-
 	"github.com/beego/beego/v2/client/orm/internal/models"
 )
 
@@ -44,7 +42,7 @@ var postgresOperators = map[string]string{
 
 // postgresql column field types.
 var postgresTypes = map[string]string{
-	"auto":                "serial NOT NULL PRIMARY KEY",
+	"auto":                "bigserial NOT NULL PRIMARY KEY",
 	"pk":                  "NOT NULL PRIMARY KEY",
 	"bool":                "bool",
 	"string":              "varchar(%d)",
@@ -74,7 +72,7 @@ type dbBasePostgres struct {
 
 var _ dbBaser = new(dbBasePostgres)
 
-// get postgresql operator.
+// Get postgresql operator.
 func (d *dbBasePostgres) OperatorSQL(operator string) string {
 	return postgresOperators[operator]
 }
@@ -89,7 +87,7 @@ func (d *dbBasePostgres) GenerateOperatorLeftCol(fi *models.FieldInfo, operator 
 	}
 }
 
-// postgresql unsupports updating joined record.
+// SupportUpdateJoin postgresql unsupports updating joined record.
 func (d *dbBasePostgres) SupportUpdateJoin() bool {
 	return false
 }
@@ -98,12 +96,12 @@ func (d *dbBasePostgres) MaxLimit() uint64 {
 	return 0
 }
 
-// postgresql quote is ".
+// TableQuote postgresql quote is ".
 func (d *dbBasePostgres) TableQuote() string {
 	return `"`
 }
 
-// postgresql value placeholder is $n.
+// ReplaceMarks postgresql value placeholder is $n.
 // replace default ? to $n.
 func (d *dbBasePostgres) ReplaceMarks(query *string) {
 	q := *query
@@ -131,13 +129,12 @@ func (d *dbBasePostgres) ReplaceMarks(query *string) {
 	*query = string(data)
 }
 
-// make returning sql support for postgresql.
+// HasReturningID make returning sql support for postgresql.
 func (d *dbBasePostgres) HasReturningID(mi *models.ModelInfo, query *string) bool {
 	fi := mi.Fields.Pk
 	if fi.FieldType&IsPositiveIntegerField == 0 && fi.FieldType&IsIntegerField == 0 {
 		return false
 	}
-
 	if query != nil {
 		*query = fmt.Sprintf(`%s RETURNING "%s"`, *query, fi.Column)
 	}
@@ -173,7 +170,7 @@ func (d *dbBasePostgres) ShowColumnsQuery(table string) string {
 	return fmt.Sprintf("SELECT column_name, data_type, is_nullable FROM information_schema.Columns where table_schema NOT IN ('pg_catalog', 'information_schema') and table_name = '%s'", table)
 }
 
-// get column types of postgresql.
+// Get column types of postgresql.
 func (d *dbBasePostgres) DbTypes() map[string]string {
 	return postgresTypes
 }
@@ -189,7 +186,7 @@ func (d *dbBasePostgres) IndexExists(ctx context.Context, db dbQuerier, table st
 
 // GenerateSpecifyIndex return a specifying index clause
 func (d *dbBasePostgres) GenerateSpecifyIndex(tableName string, useIndex int, indexes []string) string {
-	logs.DebugLog.Println("[WARN] Not support any specifying index action, so that action is ignored")
+	DebugLog.Println("[WARN] Not support any specifying index action, so that action is ignored")
 	return ``
 }
 

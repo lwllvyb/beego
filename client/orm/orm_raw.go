@@ -16,15 +16,13 @@ package orm
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"reflect"
 	"time"
 
-	"github.com/beego/beego/v2/client/orm/internal/utils"
-
 	"github.com/beego/beego/v2/client/orm/internal/models"
-
-	"github.com/pkg/errors"
+	"github.com/beego/beego/v2/client/orm/internal/utils"
 )
 
 // raw sql string prepared statement
@@ -75,7 +73,7 @@ type rawSet struct {
 
 var _ RawSeter = new(rawSet)
 
-// set args for every query
+// Set args for every query
 func (o rawSet) SetArgs(args ...interface{}) RawSeter {
 	o.args = args
 	return &o
@@ -90,7 +88,7 @@ func (o *rawSet) Exec() (sql.Result, error) {
 	return o.orm.db.Exec(query, args...)
 }
 
-// set field value to row container
+// Set field value to row container
 func (o *rawSet) setFieldValue(ind reflect.Value, value interface{}) {
 	switch ind.Kind() {
 	case reflect.Bool:
@@ -215,7 +213,7 @@ func (o *rawSet) setFieldValue(ind reflect.Value, value interface{}) {
 	}
 }
 
-// set field value in loop for slice container
+// Set field value in loop for slice container
 func (o *rawSet) loopSetRefs(refs []interface{}, sInds []reflect.Value, nIndsPtr *[]reflect.Value, eTyps []reflect.Type, init bool) {
 	nInds := *nIndsPtr
 
@@ -299,7 +297,7 @@ func (o *rawSet) QueryRow(containers ...interface{}) error {
 		ind := reflect.Indirect(val)
 
 		if val.Kind() != reflect.Ptr {
-			panic(fmt.Errorf("<RawSeter.QueryRow> all args must be use ptr"))
+			panic(errors.New("<RawSeter.QueryRow> All args must be use ptr"))
 		}
 
 		etyp := ind.Type()
@@ -313,12 +311,12 @@ func (o *rawSet) QueryRow(containers ...interface{}) error {
 
 		if typ.Kind() == reflect.Struct && typ.String() != "time.Time" {
 			if len(containers) > 1 {
-				panic(fmt.Errorf("<RawSeter.QueryRow> now support one struct only. see #384"))
+				panic(errors.New("<RawSeter.QueryRow> now support one struct only. see #384"))
 			}
 
 			structMode = true
 			fn := models.GetFullName(typ)
-			if mi, ok := defaultModelCache.getByFullName(fn); ok {
+			if mi, ok := models.DefaultModelCache.GetByFullName(fn); ok {
 				sMi = mi
 			}
 		} else {
@@ -386,7 +384,7 @@ func (o *rawSet) QueryRow(containers ...interface{}) error {
 							fd := field.Addr().Interface().(models.Fielder)
 							err := fd.SetRaw(value)
 							if err != nil {
-								return errors.Errorf("set raw error:%s", err)
+								return fmt.Errorf("Set raw error: %w", err)
 							}
 						} else {
 							o.setFieldValue(field, value)
@@ -460,7 +458,7 @@ func (o *rawSet) QueryRows(containers ...interface{}) (int64, error) {
 		val := reflect.ValueOf(container)
 		sInd := reflect.Indirect(val)
 		if val.Kind() != reflect.Ptr || sInd.Kind() != reflect.Slice {
-			panic(fmt.Errorf("<RawSeter.QueryRows> all args must be use ptr slice"))
+			panic(errors.New("<RawSeter.QueryRows> All args must be use ptr slice"))
 		}
 
 		etyp := sInd.Type().Elem()
@@ -474,12 +472,12 @@ func (o *rawSet) QueryRows(containers ...interface{}) (int64, error) {
 
 		if typ.Kind() == reflect.Struct && typ.String() != "time.Time" {
 			if len(containers) > 1 {
-				panic(fmt.Errorf("<RawSeter.QueryRow> now support one struct only. see #384"))
+				panic(errors.New("<RawSeter.QueryRow> now support one struct only. see #384"))
 			}
 
 			structMode = true
 			fn := models.GetFullName(typ)
-			if mi, ok := defaultModelCache.getByFullName(fn); ok {
+			if mi, ok := models.DefaultModelCache.GetByFullName(fn); ok {
 				sMi = mi
 			}
 		} else {
@@ -552,7 +550,7 @@ func (o *rawSet) QueryRows(containers ...interface{}) (int64, error) {
 							fd := field.Addr().Interface().(models.Fielder)
 							err := fd.SetRaw(value)
 							if err != nil {
-								return 0, errors.Errorf("set raw error:%s", err)
+								return 0, fmt.Errorf("Set raw error: %w", err)
 							}
 						} else {
 							o.setFieldValue(field, value)
@@ -880,7 +878,7 @@ func (o *rawSet) ValuesFlat(container *ParamsList, cols ...string) (int64, error
 	return o.readValues(container, cols)
 }
 
-// query all rows into map[string]interface with specify key and value column name.
+// query All rows into map[string]interface with specify key and value column name.
 // keyCol = "name", valueCol = "value"
 // table data
 // name  | value
@@ -895,7 +893,7 @@ func (o *rawSet) RowsToMap(result *Params, keyCol, valueCol string) (int64, erro
 	return o.queryRowsTo(result, keyCol, valueCol)
 }
 
-// query all rows into struct with specify key and value column name.
+// query All rows into struct with specify key and value column name.
 // keyCol = "name", valueCol = "value"
 // table data
 // name  | value
